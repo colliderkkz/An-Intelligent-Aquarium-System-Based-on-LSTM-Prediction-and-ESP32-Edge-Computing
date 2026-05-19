@@ -1,0 +1,17 @@
+{
+  "idf.currentSetup": "D:/Espressif/frameworks/esp-idf-v5.4/",
+  "C_Cpp.errorSquiggles": "disabled",
+  "idf.portWin": "COM4",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "clangd.path": "D:\\Espressif\\tools\\esp-clang\\esp-18.1.2_20240912\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=d:\\code\\Code\\dachuang2.0\\code\\fish_panzer_code1.0\\build"
+  ]
+}

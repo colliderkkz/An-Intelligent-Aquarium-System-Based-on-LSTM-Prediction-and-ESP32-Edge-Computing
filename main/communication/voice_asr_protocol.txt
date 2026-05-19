@@ -1,0 +1,107 @@
+ASR-PRO <-> ESP32 Voice Protocol
+
+UART:
+- baud rate: 9600
+- format: 8N1
+
+ASR-PRO -> ESP32 command input
+- wake token: WAKE or SMART_BUTLER or VOICE_BUTLER
+- ASR-PRO standard hex wake frame:
+  FF 00 00 00 FF
+- ASR-PRO standard hex command frame:
+  FF 00 XX 01
+  XX is the command id, for example:
+  FF 00 01 01 -> light on
+  FF 00 02 01 -> light off
+  FF 00 09 01 -> feed
+  FF 00 10 01 -> query temperature
+- command token examples:
+  LIGHT_ON
+  LIGHT_OFF
+  PUMP_ON
+  PUMP_OFF
+  HEATER_ON
+  HEATER_OFF
+  CO2_ON
+  CO2_OFF
+  FEED
+  UV_ON
+  UV_OFF
+  QUERY_TEMP
+  QUERY_PH
+  QUERY_TDS
+  QUERY_ALL
+- numeric command examples:
+  0x01
+  0x09
+  0x10
+  CMD:0x13
+
+ESP32 -> ASR-PRO response output
+- wake acknowledge:
+  WAKEACK
+
+- control success:
+  ACK01  light on
+  ACK02  light off
+  ACK03  pump on
+  ACK04  pump off
+  ACK05  heater on
+  ACK06  heater off
+  ACK07  co2 on
+  ACK08  co2 off
+  ACK09  feed
+  ACK0A  uv on
+  ACK0B  uv off
+
+- generic errors:
+  ERR00  unknown command
+  ERRxx  command xx execution failed
+  ERTMP  temperature read failed
+  ERPH0  ph read failed
+  ERTDS  tds read failed
+
+- query result frames:
+  QT+253
+    means temperature = 25.3 C
+    format: QT + signed 4-digit integer, value = temp * 10
+
+  QP072
+    means pH = 7.2
+    format: QP + 3-digit integer, value = ph * 10
+
+  QD0320
+    means TDS = 320 ppm
+    format: QD + 4-digit integer
+
+  QS+2530720320080090012
+    format:
+    QS
+    temp  : signed 4 digits, temp * 10
+    ph    : 3 digits, ph * 10
+    tds   : 4 digits, ppm
+    level : 3 digits, percent
+    light : 3 digits, percent
+    turb  : 4 digits, NTU
+
+ASR-PRO voice suggestion
+- when receive WAKEACK: broadcast "我在"
+- when receive ACK01: broadcast "灯光已打开"
+- when receive ACK02: broadcast "灯光已关闭"
+- when receive ACK03: broadcast "水泵已打开"
+- when receive ACK04: broadcast "水泵已关闭"
+- when receive ACK05: broadcast "加热已打开"
+- when receive ACK06: broadcast "加热已关闭"
+- when receive ACK07: broadcast "二氧化碳已打开"
+- when receive ACK08: broadcast "二氧化碳已关闭"
+- when receive ACK09: broadcast "喂食完成"
+- when receive ACK0A: broadcast "紫外灯已打开"
+- when receive ACK0B: broadcast "紫外灯已关闭"
+- when receive ERR00: broadcast "未识别到有效指令"
+- when receive ERTMP: broadcast "温度读取失败"
+- when receive ERPH0: broadcast "PH读取失败"
+- when receive ERTDS: broadcast "TDS读取失败"
+
+For QT / QP / QD / QS:
+- parse the digits in ASR-PRO custom serial receive code
+- convert them to spoken text with your local broadcast blocks or code
