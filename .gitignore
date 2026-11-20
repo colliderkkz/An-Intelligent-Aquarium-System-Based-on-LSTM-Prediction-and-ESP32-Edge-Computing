@@ -179,3 +179,14 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+/sdkconfig
+/sdkconfig.old
+/tools/_passnat_token.txt
+/tools/glasses_test/deps/
+*.keystore
+*.jks
+*.apk
+*.sqlite*
+/android/.gradle/
+/android/local.properties
+/tools/phone_console.published.html

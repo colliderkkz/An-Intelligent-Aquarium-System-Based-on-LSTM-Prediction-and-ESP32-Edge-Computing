@@ -3,6 +3,7 @@
 
 #include "bus/i2c_bus.h"
 #include "esp_err.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -19,7 +20,15 @@ typedef struct {
     uint8_t second;
 } pcf8563_time_t;
 
+/**
+ * @brief 初始化 RTC，并清除 STOP / 控制寄存器
+ * @return ESP_OK 正常；ESP_ERR_INVALID_STATE 表示 VL=1（掉电过，时间不可信）
+ */
 esp_err_t pcf8563_init(i2c_bus_handle_t bus, uint8_t dev_addr);
+
+/** 读取 VL 标志判断时间是否可信 */
+bool pcf8563_time_is_valid(i2c_bus_handle_t bus, uint8_t dev_addr);
+
 esp_err_t pcf8563_set_time(i2c_bus_handle_t bus, uint8_t dev_addr, const pcf8563_time_t *time);
 esp_err_t pcf8563_get_time(i2c_bus_handle_t bus, uint8_t dev_addr, pcf8563_time_t *time);
 

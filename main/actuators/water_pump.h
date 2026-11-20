@@ -12,8 +12,17 @@ esp_err_t water_pump_init(void);
 esp_err_t water_pump_set_state(bool on);
 bool water_pump_get_state(void);
 
+/** 引脚实际电平（0/1，-1 表示未初始化），用于现场校验极性 */
+int water_pump_get_level(void);
+
 #ifdef __cplusplus
 }
 #endif
 
+esp_err_t water_pump_set_level(uint8_t percent);
+
+/** 设置强度 0~100（0 = 关） */
+
+/** 读取当前强度 0~100 */
+uint8_t water_pump_get_percent(void);
 #endif // WATER_PUMP_H

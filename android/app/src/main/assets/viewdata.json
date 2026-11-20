@@ -1,0 +1,135 @@
+{
+  "type": "LinearLayout",
+  "props": {
+    "id": "root",
+    "layout_width": "match_parent",
+    "layout_height": "match_parent",
+    "orientation": "vertical",
+    "gravity": "center_horizontal",
+    "padding": 24,
+    "backgroundColor": "#FF000000"
+  },
+  "children": [
+    {
+      "type": "TextView",
+      "props": {
+        "id": "title",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "鱼缸 · 实时状态",
+        "textSize": "30sp",
+        "textColor": "#FF00FF00",
+        "textStyle": "bold",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_time",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "同步 --:--:--",
+        "textSize": "18sp",
+        "textColor": "#FF9CFF9C",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_temp",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "温度 --.- ℃",
+        "textSize": "26sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_ph",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "PH --.-    浊度 --.- NTU",
+        "textSize": "22sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_tds",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "TDS --- ppm    水位 -- %",
+        "textSize": "22sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_co2",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "CO2 --- ppm    光照 ---",
+        "textSize": "22sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_act",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "灯 -- %   泵 -- %   气 -- %",
+        "textSize": "20sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_mode",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "模式 --    保持 --",
+        "textSize": "20sp",
+        "textColor": "#FF00FF00",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_ai",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "AI --",
+        "textSize": "20sp",
+        "textColor": "#FF9CFF9C",
+        "gravity": "center"
+      }
+    },
+    {
+      "type": "TextView",
+      "props": {
+        "id": "line_beat",
+        "layout_width": "wrap_content",
+        "layout_height": "wrap_content",
+        "text": "链路 --    刷新 0",
+        "textSize": "18sp",
+        "textColor": "#FF9CFF9C",
+        "gravity": "center"
+      }
+    }
+  ]
+}

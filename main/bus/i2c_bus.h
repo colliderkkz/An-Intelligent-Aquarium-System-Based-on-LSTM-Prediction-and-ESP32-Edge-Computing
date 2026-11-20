@@ -26,7 +26,6 @@ typedef struct {
     uint32_t clk_speed_hz;
     bool pullup_enable;
     uint32_t timeout_ms;
-    uint32_t scl_wait_us;
 } i2c_bus_config_t;
 
 typedef struct i2c_bus_t *i2c_bus_handle_t;

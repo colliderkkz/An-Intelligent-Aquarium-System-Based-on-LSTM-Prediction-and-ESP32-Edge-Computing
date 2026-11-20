@@ -1,6 +1,13 @@
 # 基于多传感器与神经网络融合的智能鱼缸生态监控与自主运维系统
 
-本项目基于 **ESP32-S3** 主控，集成 7 种传感器（pH、TDS、浊度、温度、水位、光照、CO2）和 7 路执行器（加热、水泵、加水泵、CO2 电磁阀、喂食器、水草灯、紫外灯），实现水质实时监测、自动控制（温控、补水、灯光、CO2、紫外灯）、远程监控（MQTT + 手机 App）和本地 LSTM 水质判断（TinyML 边缘推理），目标是打造一个低门槛、全自动、可远程交互的智能鱼缸系统。
+本项目基于 **ESP32-S3** 主控，集成 7 种传感器（pH、TDS、浊度、温度、水位、光照、CO2）和 7 路执行器（加热、水泵、加水泵、CO2 电磁阀、喂食器、水草灯、紫外灯），实现水质实时监测、自动控制（温控、补水、灯光、CO2、紫外灯）、远程监控（MQTT + 手机 App）和水质预测，目标是打造一个低门槛、全自动、可远程交互的智能鱼缸系统。
+
+## 源码入口
+
+- `main/` 为 ESP32-S3 固件。使用 ESP-IDF 5.4，在仓库根目录运行 `idf.py set-target esp32s3` 和 `idf.py build`。
+- `tools/fish_tank_debugger.py` 为串口调试台。`tools/phone_console.html` 为网页控制台，连接时填写自己的 Broker、设备 ID 和账号。MQTT 辅助脚本使用 `MQTT_HOST`、`MQTT_USER` 和 `MQTT_PASS`。
+- `android/` 为手机应用，`tools/glasses_test/` 为 Rokid 显示测试应用。手工打包前设置 `FISHTANK_KEYSTORE_PASSWORD`，如使用 Gradle，先运行 `pwsh tools/build_glasses_test.ps1 -DependenciesOnly` 下载眼镜 SDK 依赖。
+- `nas_wq_poc/` 为 MQTT 水质推理服务，包含运行权重、依赖和端到端测试。`water_quality/` 提供同一 CNN 的 ESP32、Web 和 Python 实现及验证向量。
 
 ## 硬件 IO 表
 
@@ -35,7 +42,7 @@ main/
 ├── actuators/             # 执行器抽象层
 ├── control/               # 温控 / 水位 / 灯光 / 喂食逻辑
 ├── data/                  # 数据滤波、环形缓冲区、SD卡记录
-├── ml/                    # LSTM 水质判断模型
+├── ml/                    # 早期 LSTM 接口占位
 ├── communication/         # WiFi / MQTT / 语音
 ├── utils/                 # 滤波、定时器、队列等工具
 └── system/                # 看门狗、故障诊断、恢复
@@ -66,9 +73,7 @@ main/
 
 ### 4. AI 水质判断
 
-- **输入特征**：温度、pH、TDS、浊度、光照、CO2、水位、运行时长、小时、星期
-- **模型**：LSTM（24 小时时间窗口）
-- **部署**：TensorFlow Lite Micro 在 ESP32-S3 上本地推理，不依赖云端
+水质 CNN 使用连续 24 组温度、pH、TDS 和浊度读数，输出正常、注意、警告和严重四类概率。NAS 服务通过 MQTT 接收数据并发布分类结果。ESP32 的 CNN 接入源码在 `water_quality/esp32/`，当前固件构建清单未启用该模块。
 
 ### 5. 语音控制
 

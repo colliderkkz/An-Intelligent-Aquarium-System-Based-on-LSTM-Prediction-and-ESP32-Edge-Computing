@@ -2,9 +2,9 @@
 
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,78 +14,27 @@ typedef struct {
     uart_receiver_config_t cfg;
 } uart_receiver_ctx_t;
 
-static void rstrip_line(char *line, size_t *len) {
-    if (!line || !len) {
+static void rstrip_line(char *line) {
+    if (!line) {
         return;
     }
 
-    while (*len > 0) {
-        char c = line[*len - 1];
+    size_t len = strlen(line);
+    while (len > 0) {
+        char c = line[len - 1];
         if (c == '\r' || c == '\n' || c == ' ' || c == '\t') {
-            line[*len - 1] = '\0';
-            (*len)--;
+            line[len - 1] = '\0';
+            len--;
         } else {
             break;
         }
     }
 }
 
-static bool should_emit_as_hex(const uint8_t *buf, size_t len) {
-    if (!buf || len == 0) {
-        return false;
-    }
-
-    for (size_t i = 0; i < len; i++) {
-        uint8_t c = buf[i];
-        if (c == 0 || (c < 0x20 && c != '\r' && c != '\n' && c != '\t') || c > 0x7E) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static void emit_callback_line(uart_receiver_ctx_t *ctx, uint8_t *line_buf, size_t line_len) {
-    if (!ctx || !line_buf || line_len == 0 || !ctx->cfg.callback) {
-        return;
-    }
-
-    if (should_emit_as_hex(line_buf, line_len)) {
-        size_t out_len = 0;
-        char *hex_buf = (char *)malloc(line_len * 3);
-        if (!hex_buf) {
-            ESP_LOGE(TAG, "Failed to allocate hex line buffer");
-            return;
-        }
-
-        for (size_t i = 0; i < line_len; i++) {
-            int n = snprintf(hex_buf + out_len, line_len * 3 - out_len,
-                             (i + 1 < line_len) ? "%02X " : "%02X",
-                             line_buf[i]);
-            if (n <= 0) {
-                free(hex_buf);
-                return;
-            }
-            out_len += (size_t)n;
-        }
-
-        ctx->cfg.callback(hex_buf, ctx->cfg.user_ctx);
-        free(hex_buf);
-        return;
-    }
-
-    line_buf[line_len] = '\0';
-    char *text_line = (char *)line_buf;
-    rstrip_line(text_line, &line_len);
-    if (line_len > 0) {
-        ctx->cfg.callback(text_line, ctx->cfg.user_ctx);
-    }
-}
-
 static void uart_receiver_task(void *pvParameters) {
     uart_receiver_ctx_t *ctx = (uart_receiver_ctx_t *)pvParameters;
     uint8_t *rx_buf = (uint8_t *)malloc((size_t)ctx->cfg.rx_buffer_size);
-    uint8_t *line_buf = (uint8_t *)malloc(ctx->cfg.line_buffer_size + 1U);
+    char *line_buf = (char *)malloc(ctx->cfg.line_buffer_size);
     size_t line_len = 0;
 
     if (!rx_buf || !line_buf) {
@@ -97,20 +46,34 @@ static void uart_receiver_task(void *pvParameters) {
         return;
     }
 
+    /* 空闲超时：有些模块（如 ASRPRO）发的是裸字节、不带换行，
+     * 如果只认 '\n' 就永远收不到。这里超过 80ms 没有新数据就把
+     * 已缓冲的内容当作一帧交出去。 */
+    int64_t last_rx_us = esp_timer_get_time();
+
     while (1) {
         int n = uart_read_bytes(ctx->cfg.uart_num, rx_buf, (uint32_t)ctx->cfg.rx_buffer_size, pdMS_TO_TICKS(200));
         if (n <= 0) {
-            if (line_len > 0) {
-                emit_callback_line(ctx, line_buf, line_len);
+            if (line_len > 0 && (esp_timer_get_time() - last_rx_us) > 80000) {
+                line_buf[line_len] = '\0';
+                rstrip_line(line_buf);
+                if (line_buf[0] != '\0' && ctx->cfg.callback) {
+                    ctx->cfg.callback(line_buf, ctx->cfg.user_ctx);
+                }
                 line_len = 0;
             }
             continue;
         }
+        last_rx_us = esp_timer_get_time();
 
         for (int i = 0; i < n; i++) {
-            uint8_t c = rx_buf[i];
+            char c = (char)rx_buf[i];
             if (c == '\n') {
-                emit_callback_line(ctx, line_buf, line_len);
+                line_buf[line_len] = '\0';
+                rstrip_line(line_buf);
+                if (line_buf[0] != '\0' && ctx->cfg.callback) {
+                    ctx->cfg.callback(line_buf, ctx->cfg.user_ctx);
+                }
                 line_len = 0;
             } else if (c != '\r') {
                 if (line_len < ctx->cfg.line_buffer_size - 1) {

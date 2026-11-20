@@ -13,8 +13,8 @@ extern "C" {
 #define SGP30_CMD_MEASURE_AIR_QUALITY  0x2008
 
 typedef struct {
-    uint16_t co2_eq;
-    uint16_t tvoc;
+    uint16_t co2_eq;    /* CO2 当量 ppm（空气中的，不是溶解 CO2） */
+    uint16_t tvoc;      /* TVOC ppb */
 } sgp30_data_t;
 
 esp_err_t sgp30_init(i2c_bus_handle_t bus, uint8_t dev_addr);

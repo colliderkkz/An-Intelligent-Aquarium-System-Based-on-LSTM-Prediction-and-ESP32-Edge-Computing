@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>水质 1D-CNN · 自检</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 20px; font: 14px/1.6 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+         background: #0f141a; color: #e6edf3; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  .sub { color: #8b949e; margin-bottom: 16px; }
+  #status { padding: 10px 14px; border-radius: 8px; font-weight: 600; }
+  #status.ok { background: #10351f; color: #56d364; border: 1px solid #238636; }
+  #status.bad { background: #3d1418; color: #ff7b72; border: 1px solid #da3633; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border-bottom: 1px solid #21262d; padding: 8px 6px; text-align: left; vertical-align: top; }
+  th { color: #8b949e; font-weight: 500; }
+  .bar { height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; margin: 2px 0 6px; }
+  .bar > i { display: block; height: 100%; background: #2f81f7; }
+  .p { color: #8b949e; font-size: 12px; }
+  .pass { color: #56d364; font-weight: 700; }
+  .fail { color: #ff7b72; font-weight: 700; }
+  textarea { width: 100%; height: 210px; background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
+             border-radius: 8px; padding: 10px; font: 12px/1.5 ui-monospace, Consolas, monospace; }
+  button { margin-top: 8px; padding: 8px 16px; border-radius: 8px; border: 1px solid #238636;
+           background: #238636; color: #fff; font-weight: 600; cursor: pointer; }
+  button:hover { background: #2ea043; }
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; overflow: auto; }
+  code { background: #161b22; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>水质 1D-CNN · 自检</h1>
+  <div class="sub">
+    模型 <code>pool168_s42</code> · 输入 24×4（水温℃ / pH / TDS ppm / 浊度 NTU，最旧在前）
+    · 输出 4 类（正常 / 注意 / 警告 / 严重）<br>
+    这个页面直接双击就能跑，不需要服务器、不需要联网。
+  </div>
+
+  <div id="status">加载中…</div>
+  <div id="summary" class="sub"></div>
+  <table>
+    <thead>
+      <tr><th>用例</th><th>期望</th><th>预测</th><th>四类概率</th><th>误差</th><th>结果</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <h2>手动试一组</h2>
+  <div class="sub">粘贴 24×4 的 JSON（每行 <code>[水温, pH, TDS, 浊度]</code>），点“预测”。</div>
+  <textarea id="input"></textarea>
+  <button onclick="runCustom()">预测</button>
+  <pre id="out">—</pre>
+
+<script src="wq_weights.js"></script>
+<script src="wq_cnn.js"></script>
+<script src="demo_vectors.js"></script>
+<script>
+  const NAMES = WQ.CLASS_NAMES;
+  const LABELS = WQ.CLASS_LABELS;
+
+  function pct(x) { return (x * 100).toFixed(1) + "%"; }
+
+  function probsHtml(probs, cls) {
+    return probs.map((p, i) =>
+      '<div class="p">' + LABELS[i] + ' ' + pct(p) + '</div>' +
+      '<div class="bar"><i style="width:' + (p * 100).toFixed(1) + '%;background:' +
+      (i === cls ? '#56d364' : '#2f81f7') + '"></i></div>'
+    ).join('');
+  }
+
+  function runSelfTest() {
+    const cases = (globalThis.WQ_DEMO_CASES || {}).cases || [];
+    const rows = document.getElementById('rows');
+    let ok = true;
+    rows.innerHTML = '';
+    for (const c of cases) {
+      const r = WQ.predict(c.window);
+      let maxd = 0;
+      for (let i = 0; i < 4; i++) maxd = Math.max(maxd, Math.abs(r.probs[i] - c.expected.probs[i]));
+      const pass = r.cls === c.expected.cls && maxd < 1e-5;
+      ok = ok && pass;
+      rows.insertAdjacentHTML('beforeend',
+        '<tr>' +
+        '<td>' + c.name + '</td>' +
+        '<td>' + c.expected.cls + ' · ' + c.expected.label + '</td>' +
+        '<td>' + r.cls + ' · ' + r.label + '</td>' +
+        '<td>' + probsHtml(r.probs, r.cls) + '</td>' +
+        '<td>' + maxd.toExponential(2) + '</td>' +
+        '<td class="' + (pass ? 'pass' : 'fail') + '">' + (pass ? 'PASS' : 'FAIL') + '</td>' +
+        '</tr>');
+    }
+    const status = document.getElementById('status');
+    status.className = ok ? 'ok' : 'bad';
+    status.textContent = ok ? '全部通过：JS 推理与 Python 期望一致' : '有失败项，请检查 wq_weights.js / wq_cnn.js';
+    document.getElementById('summary').textContent =
+      '共 ' + cases.length + ' 组 · 参数 ' + WQ.params + ' 个 · 容器：' + navigator.userAgent;
+  }
+
+  function runCustom() {
+    const out = document.getElementById('out');
+    try {
+      const w = JSON.parse(document.getElementById('input').value);
+      const r = WQ.predict(w);
+      out.textContent =
+        '判定：' + r.cls + ' · ' + r.label + ' (' + r.name + ')\n' +
+        '概率：' + r.probs.map((p, i) => NAMES[i] + '=' + p.toFixed(6)).join(', ');
+    } catch (e) {
+      out.textContent = '输入有误：' + e.message;
+    }
+  }
+
+  // 默认填入干净水示例
+  const example = [];
+  for (let i = 0; i < 24; i++) example.push([25.0, 7.2, 200.0, 5.0]);
+  document.getElementById('input').value = JSON.stringify(example, null, 0).replace(/\],\[/g, '],\n[');
+
+  runSelfTest();
+</script>
+</body>
+</html>

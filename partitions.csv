@@ -1,0 +1,16 @@
+# 分区表 - 智能鱼缸系统
+# Flash: ESP32-S3-N16R8 (16MB)
+#
+# 说明：
+#   旧工程里 partitions.csv 是空文件，sdkconfig 用的又是 partitions_singleapp.csv
+#   (app 只有 1MB)，与 N16R8 的 16MB Flash 完全不匹配。这里给出正式分区表：
+#     nvs      : 24K   参数表 / WiFi 凭据等
+#     phy_init : 4K    RF 校准
+#     factory  : 2M    应用
+#     storage  : 512K  FATFS（可选：SD 卡不可用时的降级存储）
+#
+# Name,   Type, SubType, Offset,   Size,     Flags
+nvs,      data, nvs,     0x9000,   0x6000,
+phy_init, data, phy,     0xf000,   0x1000,
+factory,  app,  factory, 0x10000,  0x200000,
+storage,  data, fat,     0x210000, 0x80000,

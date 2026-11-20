@@ -1,0 +1,4 @@
+numpy>=1.24
+paho-mqtt>=2.0
+# 仅测试用：内嵌 broker（生产环境请用 Mosquitto/EMQX，不需要装这个）
+amqtt>=0.11 ; python_version >= "3.10"
